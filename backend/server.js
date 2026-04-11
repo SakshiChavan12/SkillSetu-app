@@ -4,23 +4,26 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
+
 console.log("ENV CHECK:", process.env.MONGO_URI);
 
-
-// middleware
+// ✅ middleware first
 app.use(cors());
 app.use(express.json());
 
-// test route
+// ✅ routes
+app.use("/api/users", require("./routes/userRoutes"));
+
+// ✅ test route
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-// connect DB
+// ✅ connect DB
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("MongoDB Connected"))
-.catch(err => console.log(err));
+  .then(() => console.log("MongoDB Connected"))
+  .catch(err => console.log(err));
 
-// start server
+// ✅ start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
