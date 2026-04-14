@@ -1,59 +1,77 @@
-const User = require("../models/User");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const User = require('../models/User');
 
-// REGISTER
-exports.registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
-
-  const userExists = await User.findOne({ email });
-  if (userExists) {
-    return res.status(400).json({ msg: "User exists" });
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword
-  });
-
-  res.json(user);
-};
-
-// LOGIN
-exports.loginUser = async (req, res) => {
-  const { email, password } = req.body;
-
-  const user = await User.findOne({ email });
-
-  if (user && (await bcrypt.compare(password, user.password))) {
-    res.json({
-      token: jwt.sign({ id: user._id }, "secret", { expiresIn: "1d" })
-    });
-  } else {
-    res.status(401).json({ msg: "Invalid credentials" });
-  }
-};
-
-//update profile
-exports.updateProfile = async (req, res) => {
+// @desc    Get all users (except current user)
+// @route   GET /api/users
+const getUsers = async (req, res) => {
   try {
-    const { skillsTeach, skillsLearn } = req.body;
-
-    const user = await User.findByIdAndUpdate(
-      req.user.id, // comes from auth middleware (later)
-      {
-        skillsTeach,
-        skillsLearn
-      },
-      { new: true }
-    );
-
-    res.json(user);
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const users = await User.find({ _id: { $ne: req.user.id } }).select('-password');
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Get single user
+// @route   GET /api/users/:id
+const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (user) {
+      user.name = req.body.name || user.name;
+      user.bio = req.body.bio || user.bio;
+      user.location = req.body.location || user.location;
+      user.skills = req.body.skills || user.skills;
+      user.skillsToLearn = req.body.skillsToLearn || user.skillsToLearn;
+
+      const updatedUser = await user.save();
+      res.json({
+        _id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        bio: updatedUser.bio,
+        location: updatedUser.location,
+        skills: updatedUser.skills,
+        skillsToLearn: updatedUser.skillsToLearn
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Search users by skill
+// @route   GET /api/users/search?skill=...
+const searchUsers = async (req, res) => {
+  try {
+    const { skill } = req.query;
+    const users = await User.find({
+      _id: { $ne: req.user.id },
+      $or: [
+        { skills: { $regex: skill, $options: 'i' } },
+        { skillsToLearn: { $regex: skill, $options: 'i' } }
+      ]
+    }).select('-password');
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getUsers, getUserById, updateProfile, searchUsers };
