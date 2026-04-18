@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/common/Navbar';
 
 // Import Landing Page Components
@@ -14,10 +14,30 @@ import Footer from './components/Landing/Footer';
 // Import Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyOTP from './pages/VerifyOTP';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import BrowseUsers from './pages/BrowseUsers';
 import Requests from './pages/Requests';
+import TestRouter from './pages/TestRouter';
+
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+  
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
+// Import Navigate
+import { Navigate } from 'react-router-dom';
 
 function App() {
   return (
@@ -27,7 +47,7 @@ function App() {
           <Navbar />
           
           <Routes>
-            {/* Landing Page Route - This renders all components */}
+            {/* Landing Page Route */}
             <Route path="/" element={
               <>
                 <Hero />
@@ -40,15 +60,47 @@ function App() {
               </>
             } />
             
-            {/* Auth Routes */}
+            {/* Auth Routes - Public */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-otp" element={<VerifyOTP />} />
             
-            {/* Protected Routes */}
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/browse" element={<BrowseUsers />} />
-            <Route path="/requests" element={<Requests />} />
+            {/* Protected Routes - Require Authentication */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/browse" 
+              element={
+                <ProtectedRoute>
+                  <BrowseUsers />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/requests" 
+              element={
+                <ProtectedRoute>
+                  <Requests />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Test Route */}
+            <Route path="/test" element={<TestRouter />} />
           </Routes>
         </div>
       </AuthProvider>
@@ -57,4 +109,3 @@ function App() {
 }
 
 export default App;
-

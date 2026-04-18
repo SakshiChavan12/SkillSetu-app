@@ -17,30 +17,32 @@ const userSchema = new mongoose.Schema({
       'Please add a valid email'
     ]
   },
+  phone: {
+    type: String,
+    trim: true
+  },
   password: {
     type: String,
     required: [true, 'Please add a password'],
     minlength: 6,
     select: false
   },
-  skills: [{
-    type: String,
-    trim: true
-  }],
-  skillsToLearn: [{
-    type: String,
-    trim: true
-  }],
-  bio: {
-    type: String,
-    maxlength: 500
+  isVerified: {
+    type: Boolean,
+    default: false
   },
-  location: {
-    type: String
-  },
-  avatar: {
+  otp: {
     type: String,
-    default: 'default-avatar.png'
+    select: false
+  },
+  otpExpiry: {
+    type: Date,
+    select: false
+  },
+  otpMethod: {
+    type: String,
+    enum: ['email', 'phone'],
+    default: 'email'
   },
   createdAt: {
     type: Date,
@@ -48,7 +50,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Encrypt password using bcrypt
+// Encrypt password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     next();
@@ -57,7 +59,7 @@ userSchema.pre('save', async function(next) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Match user entered password to hashed password in database
+// Match password method
 userSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
