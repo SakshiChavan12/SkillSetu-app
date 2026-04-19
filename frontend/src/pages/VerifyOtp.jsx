@@ -5,8 +5,6 @@ import axios from 'axios';
 const VerifyOTP = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Get email from location state or localStorage
   const email = location.state?.email || localStorage.getItem('tempEmail');
   
   const [otp, setOtp] = useState('');
@@ -15,19 +13,12 @@ const VerifyOTP = () => {
   const [success, setSuccess] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
   
-  // Debug log
-  console.log('VerifyOTP Page Loaded - Email:', email);
-  console.log('Location State:', location.state);
-  
-  // Redirect if no email
   useEffect(() => {
     if (!email) {
-      console.log('No email found, redirecting to register');
       navigate('/register');
     }
   }, [email, navigate]);
   
-  // Resend timer countdown
   useEffect(() => {
     if (resendTimer > 0) {
       const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
@@ -47,30 +38,22 @@ const VerifyOTP = () => {
     setError('');
     
     try {
-      console.log('Verifying OTP for email:', email);
-      
       const response = await axios.post('http://localhost:5000/api/auth/verify-otp', {
         email: email,
         otp: otp
       });
       
-      console.log('Verification response:', response.data);
-      
       if (response.data.success) {
         setSuccess('Email verified successfully! Redirecting to dashboard...');
-        
-        // Store token and user data
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         localStorage.removeItem('tempEmail');
         
-        // Redirect to dashboard
         setTimeout(() => {
           navigate('/dashboard');
         }, 2000);
       }
     } catch (error) {
-      console.error('Verification error:', error);
       setError(error.response?.data?.message || 'OTP verification failed. Please try again.');
     } finally {
       setLoading(false);
@@ -103,6 +86,7 @@ const VerifyOTP = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 py-12 px-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-8">
+        {/* Header */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-2">📧</div>
           <h2 className="text-3xl font-bold text-gray-800">Verify Email</h2>
@@ -112,18 +96,21 @@ const VerifyOTP = () => {
           <p className="text-purple-600 font-semibold mt-1 break-all">{email}</p>
         </div>
         
+        {/* Error Message */}
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
             {error}
           </div>
         )}
         
+        {/* Success Message */}
         {success && (
           <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
             {success}
           </div>
         )}
         
+        {/* OTP Form */}
         <form onSubmit={handleVerify}>
           <div className="mb-6">
             <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -136,7 +123,8 @@ const VerifyOTP = () => {
               placeholder="000000"
               maxLength={6}
               autoFocus
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-2xl tracking-widest font-mono"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center text-2xl tracking-widest font-mono text-gray-900 bg-white"
+              style={{ color: '#1a202c', backgroundColor: '#ffffff' }}
             />
             <p className="text-xs text-gray-500 mt-2">
               Enter the 6-digit code sent to your email
@@ -146,7 +134,7 @@ const VerifyOTP = () => {
           <button
             type="submit"
             disabled={loading || otp.length !== 6}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-2 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition disabled:opacity-50 text-base"
           >
             {loading ? 'Verifying...' : 'Verify OTP'}
           </button>
